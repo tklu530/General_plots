@@ -1,0 +1,358 @@
+
+#einige Beispiele, die am besten ueber copy-paste einzufuegen sind
+
+
+#1.: CD
+"""
+#generelle Vordefinition
+n1 = n3 = 1.    #Brindex ueber und unter der Struktur
+LAMBDA_x = LAMBDA_y = 1.6  #Periode einer Zelle
+thickness = 1.3   #Achtung: hierbei sind die z-Koord der Plotpunkte, nicht unbedingt die wahre Dicke der Struktur wichtig
+index = 0
+wavelength = (np.linspace(400.,700.,31))[index] * 0.001   #Wellenlaenge der eingehenden Welle oder Array bei Durchlauf
+print(" Wellenlaenge: " + str(wavelength) + "um")
+
+lens_diam = LAMBDA_x * 12.   #Hilfsvariable fuer die Geometrien; hier als Linsendurchmesser betrachtet
+samps_per_cell_x = samps_per_cell_y = 19   #Anzahl der Feldsamplingpunkte pro Achse einer Zelle, gerade oder ungerade -> egal
+# falls field verwendet -> idealerweise RCWA-points / (samps_per_cell + 1) = Ganzzahl
+Lx = Ly = lens_diam   #Kantenlaenge der xy Fourierflaeche, gerades Vielfaches der Zellenperiode
+component = 'x'  #betrachtete Feldkomponente
+sym = "90"
+
+phi = 0. / 180. * np.pi  #Eingangswinkel der Hauptachse des Eingangsstrahls
+theta = 1. / 180. * np.pi    #Achtung!: muessen exakt mit den Eingangswinkeln der RCWA uebereinstimmen; Simpakete der RCWA
+psi = 0. / 180. * np.pi  #linearer Polarisationswinkel in der Strahltaille
+#im Fall ohne Beugung gelten diese nur fuer die eine jeweilige Winkelkombination
+
+
+
+#Code arbeitet als Stacks; mehrere structure-Objekte koennen uebereinandergesetzt werden 
+linse = structure(wavelength, n1, n3, Lx, Ly, samps_per_cell_x, samps_per_cell_y, LAMBDA_x, LAMBDA_y, thickness, theta, phi, psi, component)   #ein Objekt definiert
+#fuer jedes Objekt existiert ein eigenes Koordsystem mit 0 und thickness
+
+
+#Eingang definieren
+#linse.create_gauss(w0x=4.,w0y=4.)  #Hilfsform setzen; Form des Eingangsfeldes im Koordsys des Eingangsstrahls; Gaussstrahl ohne Beugung
+#linse.create_ellipse(a=lens_diam/20., b=lens_diam/20.)  #Hilfsform setzen; Form des Eingangsfeldes im Koordsys des Eingangsstrahls
+#linse.set_homog_wave(max_scaling=100., center=(0.,0.), plot=False, easy=False)  #setze Eingangsfeld des Objektes durch eine homogene Welle
+linse.set_gauss_beam(max_scaling=1., radius=4., t_distance=5.+1., center=(0.,0.),plot=True, z=0.)
+
+#hier werden Arrays in Deg gesetzt, welche die eingelesenen verfuegbaren Eingangswinkel zeigen; muessen somit kohaerent mit RCWASim sein
+#die Poldaten
+"""
+phi_arr = np.arange(0.,91.,2.)
+theta_arr = np.arange(0.,5.,2.)
+psi_arr = np.arange(0.,90.,2.)
+path = "E:/Optik/Simulationen/CD_1D/Pol/"
+"""
+#Achtung!: bei Hauptdaten wurden hier nur 24 statt 100 Punkte berechnet -> in reader angeben!
+phi_arr = np.arange(0.,91.,2.)
+theta_arr = np.arange(0.,90.,2.)
+psi_arr = np.arange(45.,46.,1.)
+path = "E:/Optik/Simulationen/CD_1D/Hauptdaten/"
+#"""
+
+#"""
+linse.set_field_params(points=100, sym=sym, index=index, theta_arr=theta_arr, phi_arr=phi_arr, psi_arr=psi_arr)  #Parameter der Einlesedaten setzen
+linse.read_in_field_multiple(path=path+"Efield Gauss oben ohne Eingangsfeld.npy",space='R',wave_ind=index)  
+"""
+linse.set_DE_params(namount_x=11, namount_y=1, namount_x_read=61, namount_y_read=1, sym=sym, \
+                    index=index, theta_arr=theta_arr, phi_arr=phi_arr, psi_arr=psi_arr)   #Parameter der Einlesedaten setzen
+linse.read_in_DE(path=path+"_R_ampl_x.npy", space="R",wave_ind=index)
+"""
+
+#linse.form = np.ones((linse.My,linse.Mx))  #Hilfsform setzen; Maske in der xy-Ebene bei z = 0, in welcher Zellen bestueckt werden
+linse.create_polygon(np.array([[-8.,-8.],[-8.,8.],[8.,8.],[8.,-8.]]))
+# ausserhalb wird das Feld zu Null gesetzt
+linse.set_mask(phase_map=None, min_val = 0, max_val = 0, plot=False, f=0)  #Setzen der Feldbildmaske
+
+linse.calculate(z=-0.5,orient='xy',fourier=False,line=0.,R_mode="aus")
+
+linse.plot_field(log=False, write_out=False, airy=None, mode="Abs", down=0, order=False)
+
+#np.savetxt("linse_E_plot.txt",np.abs(linse.E_plot))
+
+
+#Speicher raeumen
+del linse
+"""
+
+
+
+
+
+#2.: CD-Ordnungspositionen
+"""  
+#generelle Vordefinition
+n1 = n3 = 1.    #Brindex ueber und unter der Struktur
+LAMBDA_x = LAMBDA_y = 1.6  #Periode einer Zelle
+thickness = 1.3   #Achtung: hierbei sind die z-Koord der Plotpunkte, nicht unbedingt die wahre Dicke der Struktur wichtig
+index = 0
+wavelength = (np.linspace(400.,700.,31))[index] * 0.001   #Wellenlaenge der eingehenden Welle oder Array bei Durchlauf
+print(" Wellenlaenge: " + str(wavelength) + "um")
+
+lens_diam = LAMBDA_x * 100.   #Hilfsvariable fuer die Geometrien; hier als Linsendurchmesser betrachtet
+samps_per_cell_x = samps_per_cell_y = 9   #Anzahl der Feldsamplingpunkte pro Achse einer Zelle, gerade oder ungerade -> egal
+# falls field verwendet -> idealerweise RCWA-points / (samps_per_cell + 1) = Ganzzahl
+Lx = Ly = lens_diam   #Kantenlaenge der xy Fourierflaeche, gerades Vielfaches der Zellenperiode
+component = 'x'  #betrachtete Feldkomponente
+sym = "90"
+dim = "1D"
+
+phi = 45. / 180. * np.pi  #Eingangswinkel der Hauptachse des Eingangsstrahls
+theta = 45. / 180. * np.pi    #Achtung!: muessen exakt mit den Eingangswinkeln der RCWA uebereinstimmen; Simpakete der RCWA
+psi = 45. / 180. * np.pi  #linearer Polarisationswinkel in der Strahltaille
+#im Fall ohne Beugung gelten diese nur fuer die eine jeweilige Winkelkombination
+
+#Code arbeitet als Stacks; mehrere structure-Objekte koennen uebereinandergesetzt werden 
+linse = structure(wavelength, n1, n3, Lx, Ly, samps_per_cell_x, samps_per_cell_y, LAMBDA_x, LAMBDA_y, thickness, theta, phi, psi, component, dim)   #ein Objekt definiert
+#fuer jedes Objekt existiert ein eigenes Koordsystem mit 0 und thickness
+
+
+#Eingang definieren
+#linse.create_gauss(w0x=4.,w0y=4.)  #Hilfsform setzen; Form des Eingangsfeldes im Koordsys des Eingangsstrahls; Gaussstrahl ohne Beugung
+#linse.create_ellipse(a=lens_diam/20., b=lens_diam/20.)  #Hilfsform setzen; Form des Eingangsfeldes im Koordsys des Eingangsstrahls
+#linse.set_homog_wave(max_scaling=100., center=(0.,0.), plot=False, easy=False)  #setze Eingangsfeld des Objektes durch eine homogene Welle
+linse.set_gauss_beam(max_scaling=1., radius=4., t_distance=30., center=(0.,0.),plot=True, z=0.)
+
+
+#hier werden Arrays in Deg gesetzt, welche die eingelesenen verfuegbaren Eingangswinkel zeigen; muessen somit kohaerent mit RCWASim sein
+#die Poldaten
+"""
+phi_arr = np.arange(0.,91.,2.)
+theta_arr = np.arange(0.,5.,2.)
+psi_arr = np.arange(0.,90.,2.)
+path = "E:/Optik/Simulationen/CD_1D/Pol/"
+"""
+#Achtung!: bei Hauptdaten wurden hier nur 24 statt 100 Punkte berechnet -> in reader angeben!
+phi_arr = np.arange(0.,91.,2.)
+theta_arr = np.arange(0.,90.,2.)
+psi_arr = np.arange(45.,46.,1.)
+path = "E:/Optik/Simulationen/CD_1D/Hauptdaten/"
+#"""
+
+"""
+linse.set_field_params(points=24, sym=sym, index=index, theta_arr=theta_arr, phi_arr=phi_arr, psi_arr=psi_arr)  #Parameter der Einlesedaten setzen
+linse.read_in_field_multiple(path=path+"Efield Gauss oben ohne Eingangsfeld.npy",space='R',wave_ind=index)  
+"""
+linse.set_DE_params(namount_x=11, namount_y=1, namount_x_read=61, namount_y_read=1, sym=sym, \
+                    index=index, theta_arr=theta_arr, phi_arr=phi_arr, psi_arr=psi_arr)   #Parameter der Einlesedaten setzen
+linse.read_in_DE(path=path+"_R_ampl_x.npy", space="R",wave_ind=index)
+#"""
+
+linse.form = np.ones((linse.My,linse.Mx))  #Hilfsform setzen; Maske in der xy-Ebene bei z = 0, in welcher Zellen bestueckt werde
+# ausserhalb wird das Feld zu Null gesetzt
+linse.set_mask(phase_map=None, min_val = 0, max_val = 0, plot=False, f=0)  #Setzen der Feldbildmaske
+
+linse.calculate(z=-30.,orient='xy',fourier=False,line=0.,R_mode="aus")
+
+linse.plot_field(log=False, write_out=False, airy=None, mode="Abs", down=0, order=True)
+
+#np.savetxt("linse_E_plot.txt",np.abs(linse.E_plot))
+
+#Speicher raeumen
+del linse
+"""
+
+
+
+
+#3.: Gauss
+""" 
+#generelle Vordefinition
+n1 = n3 = 1.    #Brindex ueber und unter der Struktur
+LAMBDA_x = 1. 
+LAMBDA_y = 1.  #Periode einer Zelle
+thickness = 1.15   #Achtung: hierbei sind die z-Koord der Plotpunkte, nicht unbedingt die wahre Dicke der Struktur wichtig
+wave_ind = 0
+wavelength = 0.66   #Wellenlaenge der eingehenden Welle oder Array bei Durchlauf
+print(" Wellenlaenge: " + str(wavelength) + "um")
+
+lens_diam = LAMBDA_x * 200.   #Hilfsvariable fuer die Geometrien; hier als Linsendurchmesser betrachtet
+samps_per_cell_x = samps_per_cell_y = 2   #Anzahl der Feldsamplingpunkte pro Achse einer Zelle, gerade oder ungerade -> egal
+# falls field verwendet -> idealerweise RCWA-points / (samps_per_cell + 1) = Ganzzahl
+Lx = Ly = lens_diam   #Kantenlaenge der xy Fourierflaeche, gerades Vielfaches der Zellenperiode
+component = 'all'  #betrachtete Feldkomponente
+dim = "2D"
+
+phi = 45. / 180. * np.pi  #Eingangswinkel der Hauptachse des Eingangsstrahls
+theta = 45. / 180. * np.pi    #Achtung!: muessen exakt mit den Eingangswinkeln der RCWA uebereinstimmen; Simpakete der RCWA
+psi = 45. / 180. * np.pi  #linearer Polarisationswinkel in der Strahltaille
+#im Fall ohne Beugung gelten diese nur fuer die eine jeweilige Winkelkombination
+
+
+
+#Code arbeitet als Stacks; mehrere structure-Objekte koennen uebereinandergesetzt werden 
+linse = structure(wavelength, n1, n3, Lx, Ly, samps_per_cell_x, samps_per_cell_y, LAMBDA_x, LAMBDA_y, thickness, theta, phi, psi, component, dim)   #ein Objekt definiert
+#fuer jedes Objekt existiert ein eigenes Koordsystem mit 0 und thickness
+
+
+#Eingang definieren
+#linse.create_gauss(w0x=4.,w0y=4.)  #Hilfsform setzen; Form des Eingangsfeldes im Koordsys des Eingangsstrahls; Gaussstrahl ohne Beugung
+#linse.create_ellipse(a=lens_diam/20., b=lens_diam/20.)  #Hilfsform setzen; Form des Eingangsfeldes im Koordsys des Eingangsstrahls
+#linse.set_homog_wave(max_scaling=100., center=(0.,0.), plot=False, easy=False)  #setze Eingangsfeld des Objektes durch eine homogene Welle
+linse.set_gauss_beam(max_scaling=1., radius=4., t_distance=20., center=(0.,0.),plot=False, z=0.)
+# hier kein Wurzel 2 wegen Quellenplot
+
+#hier werden Arrays in Deg gesetzt, welche die eingelesenen verfuegbaren Eingangswinkel zeigen; muessen somit kohaerent mit RCWASim sein
+#die Poldaten
+"""
+phi_arr = np.arange(0.,45.,2.)
+theta_arr = np.arange(0.,5.,2.)
+psi_arr = np.arange(0.,90.,2.)
+path = "E:/Optik/Simulationen/Gauss 2D/Pol/"
+sym = "45"
+"""
+phi_arr = np.arange(0.,91.,2.)
+theta_arr = np.arange(0.,90.,2.)
+psi_arr = np.arange(45.,46.,1.)
+path = "E:/Optik/Simulationen/Gauss 2D/Hauptdaten/"
+sym = "90"
+#"""
+
+"""
+linse.set_field_params(points=100, sym=sym, wave_ind=wave_ind, theta_arr=theta_arr, phi_arr=phi_arr, psi_arr=psi_arr)  #Parameter der Einlesedaten setzen
+linse.read_in_field(path=path+"Efield Gauss oben ohne Eingangsfeld.npy",space='R') 
+#linse.read_in_field(path=path+"Efield Gauss unten.npy",space='T')  
+"""
+linse.set_DE_params(namount_x=11, namount_y=11, namount_x_read=21, namount_y_read=21, sym=sym, \
+                    wave_ind=wave_ind, theta_arr=theta_arr, phi_arr=phi_arr, psi_arr=psi_arr)   #Parameter der Einlesedaten setzen
+linse.read_in_DE(path=path+"_R_ampl", space="R")
+#linse.read_in_DE(path=path+"_T_ampl", space="T")  #eig bei diesem Zellentyp in RCWA auch 45Grad symm nutzbar!!!
+#"""
+
+
+linse.form = np.ones((linse.My,linse.Mx))  #Hilfsform setzen; Maske in der xy-Ebene bei z = 0, in welcher Zellen bestueckt werde
+# ausserhalb wird das Feld zu Null gesetzt
+linse.set_mask(phase_map=None, min_val = 0, max_val = 0, plot=False, f=0)  #Setzen der Feldbildmaske
+
+linse.calculate(z=-20.,orient='xy',fourier=False,line=0.,R_mode="aus")
+
+linse.plot_field(log=False, write_out=False, airy=None, mode="Abs", down=0, order=True)
+
+
+#Speicher raeumen
+del linse
+"""
+
+
+
+
+
+
+
+#4.: Spiegel
+""" 
+#generelle Vordefinition
+n1 = n3 = 1.    #Brindex ueber und unter der Struktur
+LAMBDA_x = 1. 
+LAMBDA_y = 1.  #Periode einer Zelle
+thickness = 1.   #Achtung: hierbei sind die z-Koord der Plotpunkte, nicht unbedingt die wahre Dicke der Struktur wichtig
+index = 0
+wavelength = 0.6   #Wellenlaenge der eingehenden Welle oder Array bei Durchlauf
+print(" Wellenlaenge: " + str(wavelength) + "um")
+
+lens_diam = LAMBDA_x * 40.   #Hilfsvariable fuer die Geometrien; hier als Linsendurchmesser betrachtet
+samps_per_cell_x = samps_per_cell_y = 9   #Anzahl der Feldsamplingpunkte pro Achse einer Zelle, gerade oder ungerade -> egal
+# falls field verwendet -> idealerweise RCWA-points / (samps_per_cell + 1) = Ganzzahl
+Lx = Ly = lens_diam   #Kantenlaenge der xy Fourierflaeche, gerades Vielfaches der Zellenperiode
+component = 'x'  #betrachtete Feldkomponente
+
+phi = 0. / 180. * np.pi  #Eingangswinkel der Hauptachse des Eingangsstrahls
+theta = 45. / 180. * np.pi    #Achtung!: muessen exakt mit den Eingangswinkeln der RCWA uebereinstimmen; Simpakete der RCWA
+psi = 90. / 180. * np.pi  #linearer Polarisationswinkel in der Strahltaille
+#im Fall ohne Beugung gelten diese nur fuer die eine jeweilige Winkelkombination
+
+#Code arbeitet als Stacks; mehrere structure-Objekte koennen uebereinandergesetzt werden 
+linse = structure(wavelength, n1, n3, Lx, Ly, samps_per_cell_x, samps_per_cell_y, LAMBDA_x, LAMBDA_y, thickness, theta, phi, psi, component)   #ein Objekt definiert
+#fuer jedes Objekt existiert ein eigenes Koordsystem mit 0 und thickness
+
+#Eingang definieren
+#linse.create_gauss(w0x=1.,w0y=1.)  #Hilfsform setzen; Form des Eingangsfeldes im Koordsys des Eingangsstrahls; Gaussstrahl ohne Beugung
+#linse.create_ellipse(a=1., b=1.)  #Hilfsform setzen; Form des Eingangsfeldes im Koordsys des Eingangsstrahls
+#linse.set_homog_wave(max_scaling=1., center=(0.,0.), plot=True, easy=False, e_vec=False)  #setze Eingangsfeld des Objektes durch eine homogene Welle
+linse.set_lambertian(max_scaling=1., radius=1., t_distance=20., center=(0.,0.), angle_lambert=10., plot=True, z=0., e_vec=False)
+#linse.set_gauss_beam(max_scaling=1., radius=1., t_distance=20., center=(0.,0.), plot=True, z=0., e_vec=False)
+
+#hier werden Arrays in Deg gesetzt, welche die eingelesenen verfuegbaren Eingangswinkel zeigen; muessen somit kohaerent mit RCWASim sein
+phi_arr = np.arange(0.,45.,2.)
+low = theta / np.pi * 180. - 10.
+if low < 0.: low = 0.
+theta_arr = np.arange(low,theta / np.pi * 180. + 10.,2.)
+psi_arr = np.arange(0.,91.,2.)
+sym = "45"
+path = ""
+
+pol = 0
+if linse.component == 'y': pol = 1
+if linse.component == 'z': pol = 2 
+
+#aktueller Betrachtungsfall von Spiegel bzw. Luft
+theta_in = theta_arr / 180. * np.pi
+phi_in = phi_arr / 180. * np.pi
+psi_in = psi_arr / 180. * np.pi
+theta_in, phi_in, psi_in = np.meshgrid(phi_in, theta_in, psi_in)
+
+#Polarisationseinheitsvektor e-Dach
+#RCWA-Eingang: e_x -> TAL Eingang: E^inc * e_x
+e_ = np.array([np.cos(psi_in) * np.cos(phi_in) * np.cos(theta_in) - np.sin(psi_in) * np.sin(phi_in),
+              np.cos(psi_in) * np.sin(phi_in) * np.cos(theta_in) + np.sin(psi_in) * np.cos(phi_in),
+              -np.cos(psi_in) * np.sin(theta_in)])
+
+"""
+e_ = np.expand_dims(np.expand_dims(e_,axis=-1),axis=-1)
+
+linse.set_field_params(points=100, sym=sym, index=index, theta_arr=theta_arr, phi_arr=phi_arr, psi_arr=psi_arr)  #Parameter der Einlesedaten setzen
+linse.E_refl_sample = np.zeros((np.size(theta_arr)+1,np.size(phi_arr)+1,np.size(psi_arr)+1,samps_per_cell_y+1,samps_per_cell_x+1))    
+linse.E_refl_sample[1:,1:,1:] = -e_[pol]   #Spiegel fuer Test
+#am Spiegel ja Phasensprung phi_o = phi_i + pi
+linse.E_trans_sample = np.zeros((np.size(theta_arr)+1,np.size(phi_arr)+1,np.size(psi_arr)+1,samps_per_cell_y+1,samps_per_cell_x+1))
+linse.E_trans_sample[1:,1:,1:] = e_[pol]   #Luft fuer Test
+"""
+
+linse.set_DE_params(namount_x=1, namount_y=1, namount_x_read=21, namount_y_read=21, sym=sym, \
+                    index=index, theta_arr=theta_arr, phi_arr=phi_arr, psi_arr=psi_arr)   #Parameter der Einlesedaten setzen
+linse.E_refl_sample = np.zeros((np.size(theta_arr)+1,np.size(phi_arr)+1,np.size(psi_arr)+1,linse.namount_y,linse.namount_x)) 
+linse.E_refl_sample[1:,1:,1:,linse.namount_y//2,linse.namount_x//2] = -e_[pol] #Spiegel fuer Test
+linse.E_trans_sample = np.zeros((np.size(theta_arr)+1,np.size(phi_arr)+1,np.size(psi_arr)+1,linse.namount_y,linse.namount_x)) 
+linse.E_trans_sample[1:,1:,1:,linse.namount_y//2,linse.namount_x//2] = e_[pol] #Luft fuer Test
+#"""
+#"""
+linse.form = np.ones((linse.My,linse.Mx))  #Hilfsform setzen; Maske in der xy-Ebene bei z = 0, in welcher Zellen bestueckt werden
+# ausserhalb wird das Feld zu Null gesetzt
+linse.set_mask(phase_map=None, min_val = 0, max_val = 0, plot=True, f=0)  #Setzen der Feldbildmaske
+
+linse.calculate(z=-10. * np.sqrt(2.),orient='xy',fourier=False,line=0.,R_mode="beide")  #bei Luft noch + thickness
+
+linse.plot_field(log=False, write_out=False, airy=None, mode="Abs", down=0, order=False)
+#"""
+#np.savetxt("linse_E_plot.txt",np.abs(linse.E_plot))
+
+#Speicher raeumen
+del linse
+"""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
