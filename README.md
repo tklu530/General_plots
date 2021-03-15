@@ -1,4 +1,4 @@
-# General: a 3D field propagator for partial illuminance
+# General: a 3D field propagator for partial illuminance onto arbitrary nanostructures of total lateral dimensions up to millimeters. It is designed for metalenses, gratings, diffractive lenses and others structures designed with planar technology.
 # author: Tobias Lange
 
 # This repository holds a few examples and the corresponding graphical outputs of General.
